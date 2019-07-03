@@ -9,13 +9,13 @@ def un_compress(file):#识别压缩包类型并解压，可能不用
     if os.path.exists(file):
         kind = fileguess(file)#filetype.guess(file)
         path = os.path.split(file)[0]#获取文件路径，例：/root/demo
-        if kind == 'XZ compressed data':
+        if kind == 'XZ compressed data':#.xz文件解压
             dirnm = subprocess.getstatusoutput("tar Jxvf %s -C %s | xargs awk 'BEGIN{print ARGV[1]}'" % (file, path))
             print('%s 解压完成' %file)
-        elif kind == 'POSIX tar archive (GNU)':
+        elif kind == 'POSIX tar archive (GNU)':#tar包解压
             dirnm = subprocess.getstatusoutput("tar xvf %s -C %s | xargs awk 'BEGIN{print ARGV[1]}'" %(file,path))
             print('%s 解压完成' % file)
-        elif kind == 'gzip compressed data':
+        elif kind == 'gzip compressed data':#.gz文件解压
             dirnm = subprocess.getstatusoutput("tar zxvf %s -C %s | xargs awk 'BEGIN{print ARGV[1]}'" % (file, path))
             print('%s 解压完成' % file)
         else:
@@ -84,13 +84,12 @@ def comparfile(file1,file2):#对比文件
                 # 大小差异小，内容有差异 （即内容不一样，大小一样）
                 result = False
                 return result
-        return result
+        # return result
     else:
         print(' %s 和 %s 类型不同，不进行对比' %(file1,file2))
         result = False
         return result
 
-level = 1
 def compardirs(path1,path2):#对比文件夹内容
     file1m = 0
     file2m = 0
@@ -98,24 +97,19 @@ def compardirs(path1,path2):#对比文件夹内容
     diffdirs = 1
     diffnum = 2
     print('文件夹%s 和文件夹 %s 对比内容如下：' %(path1,path2))
-    finresult = True
     for root, dirs, files in os.walk(path1):
         for name in files:
             file1 = os.path.join(path1, name)
             file2 = os.path.join(path2, name)
             if os.path.exists(file1) and os.path.exists(file2):#如果AB两个文件都存在，则进一步对比
                 result = comparfile(file1,file2)
-                if result:#如果对比结果一致则返回True
+                # print(result)
+                if result is True:#如果对比结果一致则返回True
                     finresult = True
-                else:#
-                    global level
-                    if level ==1:
-                        f1 = fileguess(file1)
-                        f2 = fileguess(file2)
-                        if f1 and f2 in {'XZ compressed data','gzip compressed data'}:
-                            file1path = un_compress(file1)  # filepath是解压后文件所在目录
-                            file2path = un_compress(file2)
-                            compardirs(file1path, file2path)
+                else:
+                    file1path = un_compress(file1)  # filepath是解压后文件所在目录
+                    file2path = un_compress(file2)
+                    compardirs2(file1path, file2path)
                     diff.append(name)
             elif os.path.exists(file1):#任何一个文件不存在则，输出一个数值
                 file1m +=1
@@ -128,9 +122,45 @@ def compardirs(path1,path2):#对比文件夹内容
         finresult = False
         return finresult
     if len(diff) > diffnum:#此阈值是个可调值。用来显示文件夹内文件不同数据过大时报警
-        print('文件夹内差异文件数大于阈值')
+        print('%s 和 %s 文件夹内部差异文件数大于阈值' %(path1,path2))
         finresult = False
         return finresult
+    return finresult
+
+def compardirs2(path1,path2):#对比文件夹内容
+    file1m = 0
+    file2m = 0
+    diff = []
+    diffdirs = 1
+    diffnum = 2
+    print('文件夹%s 和文件夹 %s 对比内容如下：' %(path1,path2))
+    for root, dirs, files in os.walk(path1):
+        for name in files:
+            file1 = os.path.join(path1, name)
+            file2 = os.path.join(path2, name)
+            if os.path.exists(file1) and os.path.exists(file2):#如果AB两个文件都存在，则进一步对比
+                result = comparfile(file1,file2)
+                # print(result)
+                if result is True:#如果对比结果一致则返回True
+                    # nonlocal finresult
+                    finresult = True
+                else:
+                    diff.append(name)
+            elif os.path.exists(file1):#任何一个文件不存在则，输出一个数值
+                file1m +=1
+                print('%s 不存在' %file2)
+            elif os.path.exists(file2):
+                file2m +=1
+                print('%s 不存在' % file1)
+    if abs(file1m-file2m) > diffdirs:#此阈值是个可调值。用来显示文件夹内文件缺少/增多数量差距过大时报警
+        print('文件夹内文件数量差距过多')
+        finresult = False
+        return finresult
+    if len(diff) > diffnum:#此阈值是个可调值。用来显示文件夹内文件不同数据过大时报警
+        print('%s 和 %s 文件夹内部差异文件数大于阈值' % (path1, path2))
+        finresult = False
+        return finresult
+    return finresult
 
 def Main(file1,file2):#,book_name_xls):
     if os.path.exists(file1) and os.path.exists(file2):
