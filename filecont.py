@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*
-import hashlib,os,tarfile,subprocess
-def un_tar(file,dirs):#解压tar文件
-    t = tarfile.open(file)
-    t.extractall(path = dirs)
-    t.close()
+import hashlib,os,subprocess
 def un_compress(file):#识别压缩包类型并解压，可能不用
     if os.path.exists(file):
         kind = fileguess(file)#filetype.guess(file)
@@ -20,7 +16,6 @@ def un_compress(file):#识别压缩包类型并解压，可能不用
             print('%s 解压完成' % file)
         else:
             print('未知文件类型')
-
         dirname = path + '/'+dirnm[1].split('/')[0]
         return dirname
 
@@ -32,10 +27,6 @@ def fileguess(file):#获取文件类型
     else:
         fg = '/'
         return fg
-def filesize(file):#获取文件尺寸，以字节（b）为单位
-    if os.path.exists(file):
-        fs = os.path.getsize(file)
-        return fs
 
 def getMd5(file):#获取MD5值
     if (os.path.exists(file)):
@@ -55,8 +46,8 @@ def comparfile(file1,file2):#对比文件
     file1tp = fileguess(file1)
     file2tp = fileguess(file2)
     if file1tp == file2tp:        #先判断文件类型，若相同则继续对比，若不同则直接退出对比
-        size1 = filesize(file1)
-        size2 = filesize(file2)
+        size1 = os.path.getsize(file1)#filesize(file1)
+        size2 = os.path.getsize(file2)#filesize(file2)
         sizevalue = 1 #此处用来定义文件大小阈值，单位是字节（B），可设置
         if size1 == size2:#先判断文件尺寸，若相同则对比MD5值
             file1md5 = getMd5(file1)
@@ -103,7 +94,6 @@ def compardirs(path1,path2):#对比文件夹内容
             file2 = os.path.join(path2, name)
             if os.path.exists(file1) and os.path.exists(file2):#如果AB两个文件都存在，则进一步对比
                 result = comparfile(file1,file2)
-                # print(result)
                 if result is True:#如果对比结果一致则返回True
                     finresult = True
                 else:
@@ -140,9 +130,7 @@ def compardirs2(path1,path2):#对比文件夹内容
             file2 = os.path.join(path2, name)
             if os.path.exists(file1) and os.path.exists(file2):#如果AB两个文件都存在，则进一步对比
                 result = comparfile(file1,file2)
-                # print(result)
                 if result is True:#如果对比结果一致则返回True
-                    # nonlocal finresult
                     finresult = True
                 else:
                     diff.append(name)
@@ -164,8 +152,8 @@ def compardirs2(path1,path2):#对比文件夹内容
 
 def Main(file1,file2):#,book_name_xls):
     if os.path.exists(file1) and os.path.exists(file2):
-        size1 = filesize(file1)#文件1的大小
-        size2 = filesize(file2)#文件2的大小
+        size1 = os.path.getsize(file1)#filesize(file1)#文件1的大小
+        size2 = os.path.getsize(file2)#filesize(file2)#文件2的大小
         if size1 == size2:     #首先对比文件大小，若文件大小一样，则继续对比MD5值
             m1 = getMd5(file1)
             m2 = getMd5(file2)
