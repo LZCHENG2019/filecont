@@ -42,7 +42,7 @@ def getMd5(file):#获取MD5值
         return m
 
 def comparfile(file1,file2):#对比文件
-    result = True
+    result = 'true'
     file1tp = fileguess(file1)
     file2tp = fileguess(file2)
     if file1tp == file2tp:        #先判断文件类型，若相同则继续对比，若不同则直接退出对比
@@ -53,32 +53,35 @@ def comparfile(file1,file2):#对比文件
             file1md5 = getMd5(file1)
             file2md5 = getMd5(file2)
             if file1md5 == file2md5:
-                print('%s 和%s 大小、内容均无差异' %(file1,file2))#大小内容均相同
+                print('%s 和%s 大小、内容均无差异' %(file1,file2),)#'\n','文件类型为 %s' % file1tp,'\n',
+                  #'基准文件大小：%s' % size1,'\n','待测文件大小：%s' % size2)#大小内容均相同
                 return result
             else:
-                result = False
-                print('%s 和%s 大小相同，内容不同' % (file1, file2))#大小一样，内容不一样
+                result = 'false'
+                print('%s 和%s 大小相同，内容不同' % (file1, file2),'\n','文件类型为 %s' % file1tp,'\n',
+                  '基准文件大小：%s' % size1,'\n','待测文件大小：%s' % size2)#大小一样，内容不一样
                 return result
 
         elif abs(size1-size2)  > sizevalue:#文件大小差距过大,自动判定内容不同
-            result = False
-            print('%s 和 %s 文件大小差距过大' % (file1, file2))
+            result = 'false'
+            print('%s 和 %s 文件大小差距过大' % (file1, file2),'\n','文件类型为 %s' % file1tp,'\n',
+                  '基准文件大小：%s' % size1,'\n','待测文件大小：%s' % size2)
             return result
         elif abs(size1-size2) < sizevalue:#大小差异较小，进一步判断文件内容差异
             file1md5 = getMd5(file1)
             file2md5 = getMd5(file2)
             if file1md5 == file2md5:
-                print('%s 和%s 大小差异小、内容无差异' % (file1, file2))
-                # 大小差异小，内容无差异
+                print('%s 和%s 大小差异小、内容无差异' % (file1, file2),'\n','文件类型为 %s' % file1tp,'\n',
+                  '基准文件大小：%s' % size1,'\n','待测文件大小：%s' % size2)
             else:
-                print('%s 和%s 大小差异小、内容有差异' % (file1, file2))
-                # 大小差异小，内容有差异 （即内容不一样，大小一样）
-                result = False
+                print('%s 和%s 大小差异小、内容有差异' % (file1, file2),'\n','文件类型为 %s' % file1tp,'\n',
+                  '基准文件大小：%s' % size1,'\n','待测文件大小：%s' % size2)
+                result = 'false'
                 return result
-        # return result
+
     else:
         print(' %s 和 %s 类型不同，不进行对比' %(file1,file2))
-        result = False
+        result = 'false'
         return result
 
 def compardirs(path1,path2):#对比文件夹内容
@@ -87,6 +90,7 @@ def compardirs(path1,path2):#对比文件夹内容
     diff = []
     diffdirs = 1
     diffnum = 2
+    finresult = 'true'
     print('文件夹%s 和文件夹 %s 对比内容如下：' %(path1,path2))
     for root, dirs, files in os.walk(path1):
         for name in files:
@@ -94,12 +98,9 @@ def compardirs(path1,path2):#对比文件夹内容
             file2 = os.path.join(path2, name)
             if os.path.exists(file1) and os.path.exists(file2):#如果AB两个文件都存在，则进一步对比
                 result = comparfile(file1,file2)
-                if result is True:#如果对比结果一致则返回True
-                    finresult = True
+                if result == 'true':#如果对比结果一致则返回'true'
+                    finresult = 'true'
                 else:
-                    file1path = un_compress(file1)  # filepath是解压后文件所在目录
-                    file2path = un_compress(file2)
-                    compardirs2(file1path, file2path)
                     diff.append(name)
             elif os.path.exists(file1):#任何一个文件不存在则，输出一个数值
                 file1m +=1
@@ -109,46 +110,21 @@ def compardirs(path1,path2):#对比文件夹内容
                 print('%s 不存在' % file1)
     if abs(file1m-file2m) > diffdirs:#此阈值是个可调值。用来显示文件夹内文件缺少/增多数量差距过大时报警
         print('文件夹内文件数量差距过多')
-        finresult = False
-        return finresult
+        finresult = 'false'
+        return finresult,diff
     if len(diff) > diffnum:#此阈值是个可调值。用来显示文件夹内文件不同数据过大时报警
         print('%s 和 %s 文件夹内部差异文件数大于阈值' %(path1,path2))
-        finresult = False
-        return finresult
-    return finresult
+        finresult = 'false'
+        return finresult,diff
+    return finresult,diff
 
-def compardirs2(path1,path2):#对比文件夹内容
-    file1m = 0
-    file2m = 0
-    diff = []
-    diffdirs = 1
-    diffnum = 2
-    print('文件夹%s 和文件夹 %s 对比内容如下：' %(path1,path2))
-    for root, dirs, files in os.walk(path1):
-        for name in files:
-            file1 = os.path.join(path1, name)
-            file2 = os.path.join(path2, name)
-            if os.path.exists(file1) and os.path.exists(file2):#如果AB两个文件都存在，则进一步对比
-                result = comparfile(file1,file2)
-                if result is True:#如果对比结果一致则返回True
-                    finresult = True
-                else:
-                    diff.append(name)
-            elif os.path.exists(file1):#任何一个文件不存在则，输出一个数值
-                file1m +=1
-                print('%s 不存在' %file2)
-            elif os.path.exists(file2):
-                file2m +=1
-                print('%s 不存在' % file1)
-    if abs(file1m-file2m) > diffdirs:#此阈值是个可调值。用来显示文件夹内文件缺少/增多数量差距过大时报警
-        print('文件夹内文件数量差距过多')
-        finresult = False
-        return finresult
-    if len(diff) > diffnum:#此阈值是个可调值。用来显示文件夹内文件不同数据过大时报警
-        print('%s 和 %s 文件夹内部差异文件数大于阈值' % (path1, path2))
-        finresult = False
-        return finresult
-    return finresult
+def compardirs2(path1,path2,diff):
+    for name in diff:
+        file1 = os.path.join(path1,name)
+        file2 = os.path.join(path2,name)
+        file1path = un_compress(file1)  # filepath是解压后文件所在目录
+        file2path = un_compress(file2)
+        compardirs(file1path, file2path)
 
 def Main(file1,file2):#,book_name_xls):
     if os.path.exists(file1) and os.path.exists(file2):
@@ -163,17 +139,19 @@ def Main(file1,file2):#,book_name_xls):
             else:
                 file1path = un_compress(file1)#filepath是解压后文件所在目录
                 file2path = un_compress(file2)
-                if compardirs(file1path,file2path):
+                result,diff = compardirs(file1path,file2path)
+                if result == 'true':
                     print('最终结果：结果无差异')
                 else:
-                    print('最终结果：结果有差异请查看！')
+                    compardirs2(file1path ,file2path ,diff)
+                    print('最终结果：结果有差异！请查看！！！')
         elif abs(size1-size2) > 10:#此处阈值可调，当文件差异过大时，继续对比
             file1path = un_compress(file1)  # filepath是解压后文件所在目录
             file2path = un_compress(file2)
             if compardirs(file1path, file2path):
                 print('最终结果：结果无差异')
             else:
-                print('最终结果：结果有差异请查看！')
+                print('最终结果：结果有差异！请查看！！！')
         else:
             print('最终结果：文件差异在允许范围内')
     else:
