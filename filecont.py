@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*
-import hashlib,os,subprocess
+import hashlib,os,subprocess,difflib
+def get_equal_rate(str1, str2):
+   return difflib.SequenceMatcher(None, str1, str2).quick_ratio()
 def un_compress(file):#识别压缩包类型并解压，可能不用
     if os.path.exists(file):
         kind = fileguess(file)#filetype.guess(file)
@@ -80,30 +82,28 @@ def compardirs(path1,path2):#对比文件夹内容
     diffsize = 1#此阈值用来调节文件夹内文件大小差异数量差距过大时报警
     diffdirs = 1#此阈值用来调节文件夹内文件缺少/增多数量差距过大时报警
     finresult = 'true'
-    for root, dirs, files in os.walk(path1):
-        for name in files:
-            file1 = os.path.join(path1, name)
-            file2 = os.path.join(path2, name)
-            if os.path.exists(file1) and os.path.exists(file2):#如果AB两个文件都存在，则进一步对比
+    files1_list = os.listdir(path1)
+    files2_list = os.listdir(path2)
+    file1m = len(files1_list)
+    file2m = len(files2_list)
+    for name1 in files1_list:#files:
+        for name2 in files2_list:
+            if get_equal_rate(name1,name2) > 0.9:#判断如果两个文件名称相似度大于0.9判定为文件名称相同
+                file1 = os.path.join(path1, name1)
+                file2 = os.path.join(path2, name2)
                 result,filetp,filecont,filesize = comparfile(file1,file2)
                 if result == 'true':#如果对比结果一致则返回'true'
                     finresult = 'true'
                 else:
-                    diff.append(name)
+                    diff.append(name1)
                 if filetp == 'false':
                     file_tp += 1
                 if filecont == 'false':
                     file_cont += 1
                 if filesize == 'false':
                     file_size += 1
-            elif os.path.exists(file1):#任何一个文件不存在则，输出一个数值
-                file1m +=1
-                # print('%s 不存在' %file2)
-            elif os.path.exists(file2):
-                file2m +=1
-                # print('%s 不存在' % file1)
     if abs(file1m-file2m) > diffdirs:
-        print('文件夹内文件数量差距过多')
+        # print('文件夹内文件数量差距过多')
         finresult = 'false'
         return finresult,diff
     if file_tp > difftp:
@@ -128,11 +128,12 @@ def final_result(file1,file2):
     file2path = un_compress(file2)
     result, diff = compardirs(file1path, file2path)
     if result == 'true':
-        print('最终结果：结果无差异')
+        print('对比结果：结果无差异')
     else:
         compardirs2(file1path, file2path, diff)
-        print('最终结果：结果有差异！请查看！！！')
+        print('对比结果：结果有差异！请查看！！！')
 def Main(file1,file2):#,book_name_xls):
+    print('正在对比文件...')
     if os.path.exists(file1) and os.path.exists(file2):
         size1 = os.path.getsize(file1)#filesize(file1)#文件1的大小
         size2 = os.path.getsize(file2)#filesize(file2)#文件2的大小
@@ -140,7 +141,7 @@ def Main(file1,file2):#,book_name_xls):
             m1 = getMd5(file1)
             m2 = getMd5(file2)
             if m1 == m2:
-                print('最终结果：压缩包文件无差异')
+                print('对比结果：压缩包文件无差异')
                 return
             else:
                 final_result(file1, file2)
